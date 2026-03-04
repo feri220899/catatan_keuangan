@@ -1,0 +1,26 @@
+{
+    "pemasukan": [],
+    "pengeluaran": [],
+    "categories": [
+        {
+            "id": "cat_001",
+            "nama": "Makanan & Minuman"
+        },
+        {
+            "id": "cat_002",
+            "nama": "Transportasi"
+        },
+        {
+            "id": "cat_003",
+            "nama": "Belanja"
+        },
+        {
+            "id": "cat_004",
+            "nama": "Tagihan & Utilitas"
+        },
+        {
+            "id": "cat_005",
+            "nama": "Kesehatan"
+        }
+    ]
+}

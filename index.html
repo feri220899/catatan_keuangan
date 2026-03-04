@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catatan Keuangan</title>
+
+  <!-- jQuery CDN -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 16px;
+      background: #f0f4f8;
+      color: #333;
+      padding: 16px 16px 32px;
+    }
+
+    .container { max-width: 600px; margin: 0 auto; }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .app-header h1 {
+      font-size: 1.4rem;
+      color: #2c3e50;
+      font-weight: 700;
+    }
+
+    .app-header p {
+      font-size: 0.8rem;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    /* ===== SALDO CARD ===== */
+    .saldo-card {
+      background: #2c3e50;
+      color: #fff;
+      border-radius: 14px;
+      padding: 22px 20px;
+      text-align: center;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 16px rgba(44,62,80,0.25);
+    }
+
+    .saldo-label {
+      font-size: 0.78rem;
+      opacity: 0.7;
+      margin-bottom: 6px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .saldo-amount {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .saldo-amount.positif { color: #2ecc71; }
+    .saldo-amount.negatif { color: #e74c3c; }
+
+    /* ===== TAB NAV ===== */
+    .tab-nav {
+      display: flex;
+      background: #fff;
+      border-radius: 12px;
+      padding: 5px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 6px 8px;
+      border: none;
+      background: transparent;
+      border-radius: 9px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: background 0.18s, color 0.18s;
+      color: #999;
+    }
+
+    .tab-btn .tab-icon { font-size: 1.25rem; line-height: 1; }
+    .tab-btn .tab-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.3px; }
+
+    /* Tab aktif */
+    .tab-btn.active {
+      background: #2c3e50;
+      color: #fff;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: #f0f4f8;
+      color: #2c3e50;
+    }
+
+    /* ===== TAB PANE ===== */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ===== CARD ===== */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f4f8;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* ===== FORM GROUP ===== */
+    .form-group { margin-bottom: 14px; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #555;
+      margin-bottom: 6px;
+      letter-spacing: 0.2px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 1rem;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+      color: #333;
+      transition: border-color 0.2s, background 0.2s;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: #2c3e50;
+      background: #fff;
+    }
+
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    /* ===== TOMBOL ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 12px 18px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .btn-block { width: 100%; padding: 14px; font-size: 1.05rem; }
+
+    .btn-dark  { background: #2c3e50; color: #fff; }
+    .btn-dark:hover:not(:disabled)  { background: #3d5166; }
+
+    .btn-green { background: #d4edda; color: #155724; }
+    .btn-green:hover:not(:disabled) { background: #c3e6cb; }
+
+    .btn-red   { background: #f8d7da; color: #721c24; }
+    .btn-red:hover:not(:disabled)   { background: #f5c6cb; }
+
+    .btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+
+    /* ===== NOTIFIKASI ===== */
+    .notif {
+      display: none;
+      padding: 11px 15px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .notif.sukses { background: #d4edda; color: #155724; }
+    .notif.error  { background: #f8d7da; color: #721c24; }
+
+    /* ===== FILTER BAR ===== */
+    .filter-bar {
+      background: #f8fafc;
+      border: 1.5px solid #e8edf2;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    /* Pill filter jenis */
+    .jenis-pills {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .pill {
+      flex: 1;
+      padding: 9px 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 20px;
+      background: #fff;
+      color: #999;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .pill:hover:not(.pill-active) { border-color: #aaa; color: #555; }
+
+    /* Warna aktif per jenis */
+    .pill.pill-aktif-semua     { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+    .pill.pill-aktif-pemasukan { background: #d4edda; color: #155724; border-color: #27ae60; }
+    .pill.pill-aktif-pengeluaran { background: #f8d7da; color: #721c24; border-color: #e74c3c; }
+
+    /* Kartu ringkasan total */
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .summary-card {
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .summary-card.masuk  { background: #d4edda; }
+    .summary-card.keluar { background: #f8d7da; }
+
+    .summary-card .sc-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 3px;
+    }
+
+    .summary-card.masuk  .sc-label { color: #1e7e34; }
+    .summary-card.keluar .sc-label { color: #721c24; }
+
+    .summary-card .sc-value {
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .summary-card.masuk  .sc-value { color: #27ae60; }
+    .summary-card.keluar .sc-value { color: #e74c3c; }
+
+    .filter-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .filter-field label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #666;
+      margin-bottom: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .filter-field input {
+      width: 100%;
+      padding: 9px 11px;
+      font-size: 0.9rem;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      color: #333;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .filter-field input:focus { border-color: #2c3e50; }
+
+    .filter-actions { display: flex; gap: 8px; }
+
+    .filter-info {
+      display: none;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      color: #888;
+      text-align: center;
+    }
+
+    /* ===== TABEL ===== */
+    .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      min-width: 460px;
+    }
+
+    thead th {
+      background: #f0f4f8;
+      color: #666;
+      font-weight: 700;
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    tbody tr { border-bottom: 1px solid #f4f4f4; transition: background 0.12s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody td { padding: 11px 12px; vertical-align: middle; }
+
+    /* Badge jenis */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .badge.pemasukan   { background: #d4edda; color: #155724; }
+    .badge.pengeluaran { background: #f8d7da; color: #721c24; }
+
+    /* Warna jumlah */
+    .jumlah.pemasukan  { color: #27ae60; font-weight: 700; }
+    .jumlah.pengeluaran { color: #e74c3c; font-weight: 700; }
+
+    /* Tag kategori di tabel */
+    .tag-kategori {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 8px;
+      background: #eaf4fb;
+      color: #1a5276;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    /* Baris info/kosong */
+    .info-row td {
+      text-align: center;
+      color: #bbb;
+      padding: 28px 12px;
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+
+    /* ===== DAFTAR KATEGORI ===== */
+    .cat-add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .cat-add-row input {
+      flex: 1;
+      padding: 11px 13px;
+      font-size: 0.95rem;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .cat-add-row input:focus { border-color: #2c3e50; background: #fff; }
+
+    .cat-list {
+      list-style: none;
+      border: 1.5px solid #eee;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .cat-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      border-bottom: 1px solid #f4f4f4;
+      font-size: 0.9rem;
+      transition: background 0.12s;
+    }
+
+    .cat-list li:last-child  { border-bottom: none; }
+    .cat-list li:hover       { background: #f8fafc; }
+    .cat-list li.kosong {
+      justify-content: center;
+      color: #bbb;
+      font-style: italic;
+    }
+
+    .cat-nomor {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #f0f4f8;
+      color: #777;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .cat-nama { flex: 1; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 400px) {
+      body { padding: 10px 10px 28px; }
+      .saldo-amount { font-size: 1.9rem; }
+      .tab-btn .tab-icon { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ===== HEADER ===== -->
+  <div class="app-header">
+    <h1>&#128181; Catatan Keuangan</h1>
+  </div>
+
+  <!-- ===== SALDO — selalu tampil di semua tab ===== -->
+  <div class="saldo-card">
+    <div class="saldo-label">Saldo Saat Ini</div>
+    <div class="saldo-amount" id="saldo">Memuat...</div>
+  </div>
+
+  <!-- ===== TAB NAVIGATION ===== -->
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" data-tab="tambah" role="tab" aria-selected="true">
+      <span class="tab-icon">&#9998;</span>
+      <span class="tab-label">Tambah</span>
+    </button>
+    <button class="tab-btn" data-tab="riwayat" role="tab" aria-selected="false">
+      <span class="tab-icon">&#128203;</span>
+      <span class="tab-label">Riwayat</span>
+    </button>
+    <button class="tab-btn" data-tab="kategori" role="tab" aria-selected="false">
+      <span class="tab-icon">&#127991;</span>
+      <span class="tab-label">Kategori</span>
+    </button>
+  </nav>
+
+  <!-- ===================================================
+       TAB 1 — TAMBAH TRANSAKSI
+  =================================================== -->
+  <div id="tab-tambah" class="tab-pane active" role="tabpanel">
+    <div class="card">
+      <div class="card-title">&#9998; Tambah Transaksi</div>
+
+      <div class="notif sukses" id="notif-sukses">&#10003; Transaksi berhasil disimpan!</div>
+      <div class="notif error"  id="notif-error">&#10007; Terjadi kesalahan. Coba lagi.</div>
+
+      <form id="form-transaksi" autocomplete="off">
+
+        <div class="form-group">
+          <label for="tanggal">Tanggal</label>
+          <input type="date" id="tanggal" required>
+        </div>
+
+        <div class="form-group">
+          <label for="jenis">Jenis Transaksi</label>
+          <select id="jenis" required>
+            <option value="">-- Pilih Jenis --</option>
+            <option value="pemasukan">&#128200; Pemasukan</option>
+            <option value="pengeluaran">&#128201; Pengeluaran</option>
+          </select>
+        </div>
+
+        <!-- Kategori — muncul otomatis saat Pengeluaran dipilih -->
+        <div class="form-group" id="grup-kategori" style="display:none">
+          <label for="kategori">Kategori Pengeluaran</label>
+          <select id="kategori">
+            <option value="">-- Tanpa Kategori --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="jumlah">Jumlah (Rp)</label>
+          <input type="number" id="jumlah" min="1" placeholder="Contoh: 50000" required>
+        </div>
+
+        <div class="form-group">
+          <label for="catatan">Catatan</label>
+          <textarea id="catatan" placeholder="Opsional — keterangan transaksi"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-block btn-dark">Simpan Transaksi</button>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================
+       TAB 2 — RIWAYAT TRANSAKSI
+  =================================================== -->
+  <div id="tab-riwayat" class="tab-pane" role="tabpanel">
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+
+      <!-- Pill: filter jenis (2 tab saja) -->
+      <div class="jenis-pills">
+        <button class="pill pill-aktif-pemasukan" data-jenis="pemasukan">&#128200; Pemasukan</button>
+        <button class="pill" data-jenis="pengeluaran">&#128201; Pengeluaran</button>
+      </div>
+
+      <!-- Ringkasan total (update otomatis mengikuti filter) -->
+      <div class="summary-row">
+        <div class="summary-card masuk">
+          <div class="sc-label">Total Pemasukan</div>
+          <div class="sc-value" id="sum-masuk">Rp 0</div>
+        </div>
+        <div class="summary-card keluar">
+          <div class="sc-label">Total Pengeluaran</div>
+          <div class="sc-value" id="sum-keluar">Rp 0</div>
+        </div>
+      </div>
+
+      <!-- Filter rentang tanggal — otomatis saat nilai berubah -->
+      <div class="filter-inputs">
+        <div class="filter-field">
+          <label for="filter-dari">Dari Tanggal</label>
+          <input type="date" id="filter-dari">
+        </div>
+        <div class="filter-field">
+          <label for="filter-sampai">Sampai Tanggal</label>
+          <input type="date" id="filter-sampai">
+        </div>
+      </div>
+      <div class="filter-info" id="filter-info"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" id="judul-riwayat">&#128200; Riwayat Pemasukan</div>
+
+      <div class="notif sukses" id="notif-riwayat-sukses">&#10003; Transaksi berhasil dihapus.</div>
+      <div class="notif error"  id="notif-riwayat-error">&#10007; Gagal menghapus. Coba lagi.</div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Tanggal</th>
+              <th>Jumlah</th>
+              <th>Catatan / Kategori</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-transaksi">
+            <tr class="info-row"><td colspan="4">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================
+       TAB 3 — KELOLA KATEGORI
+  =================================================== -->
+  <div id="tab-kategori" class="tab-pane" role="tabpanel">
+    <div class="card">
+      <div class="card-title">&#127991; Kelola Kategori Pengeluaran</div>
+
+      <div class="notif sukses" id="notif-cat-sukses">&#10003; Berhasil!</div>
+      <div class="notif error"  id="notif-cat-error">&#10007; Terjadi kesalahan.</div>
+
+      <!-- Form tambah kategori baru -->
+      <div class="cat-add-row">
+        <input type="text" id="input-kategori-baru" placeholder="Nama kategori baru..." maxlength="100">
+        <button type="button" class="btn btn-sm btn-green" id="btn-tambah-kategori">+ Tambah</button>
+      </div>
+
+      <!-- Daftar kategori -->
+      <ul class="cat-list" id="list-kategori">
+        <li class="kosong">Memuat...</li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+$(function () {
+
+  /* ================================================
+     UTILITAS
+  ================================================ */
+
+  function formatRupiah(angka) {
+    return 'Rp ' + Math.abs(angka).toLocaleString('id-ID');
+  }
+
+  function formatTanggal(tgl) {
+    if (!tgl) return '-';
+    var p = tgl.split('-');
+    return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : tgl;
+  }
+
+  function tampilNotif(idSukses, idError, tipe) {
+    var el = (tipe === 'sukses') ? $(idSukses) : $(idError);
+    el.fadeIn(200);
+    setTimeout(function () { el.fadeOut(400); }, 2500);
+  }
+
+  /* ================================================
+     STATE
+  ================================================ */
+  var daftarKategori  = [];
+  var semuaTransaksi  = []; // Semua transaksi dari server (untuk filter client-side)
+  var filterJenis     = 'pemasukan'; // 'pemasukan' | 'pengeluaran'
+
+  /* ================================================
+     TANGGAL DEFAULT = HARI INI
+  ================================================ */
+  var hariIni = new Date().toISOString().split('T')[0];
+  $('#tanggal').val(hariIni);
+
+  // Filter riwayat default ke hari ini
+  $('#filter-dari').val(hariIni);
+  $('#filter-sampai').val(hariIni);
+
+  /* ================================================
+     NAVIGASI TAB
+  ================================================ */
+  $('.tab-btn').on('click', function () {
+    var target = $(this).data('tab');
+
+    // Update tombol tab
+    $('.tab-btn').removeClass('active').attr('aria-selected', 'false');
+    $(this).addClass('active').attr('aria-selected', 'true');
+
+    // Tampilkan panel yang dipilih
+    $('.tab-pane').removeClass('active');
+    $('#tab-' + target).addClass('active');
+  });
+
+  // Fungsi helper: pindah ke tab tertentu secara programatik
+  function pindahTab(nama) {
+    $('[data-tab="' + nama + '"]').trigger('click');
+  }
+
+  /* ================================================
+     TAMPILKAN/SEMBUNYIKAN DROPDOWN KATEGORI
+  ================================================ */
+  $('#jenis').on('change', function () {
+    if ($(this).val() === 'pengeluaran') {
+      $('#grup-kategori').slideDown(150);
+    } else {
+      $('#grup-kategori').slideUp(150);
+      $('#kategori').val('');
+    }
+  });
+
+  /* ================================================
+     MUAT SEMUA DATA DARI API
+     API mengembalikan { pemasukan:[...], pengeluaran:[...], categories:[...] }
+     Frontend menggabungkan keduanya untuk keperluan tabel & filter.
+  ================================================ */
+  function muatData() {
+    $.ajax({
+      url     : 'api.php',
+      method  : 'GET',
+      dataType: 'json',
+      success : function (data) {
+        daftarKategori = data.categories || [];
+
+        // Tandai jenis pada masing-masing record lalu gabungkan
+        var listMasuk  = (data.pemasukan  || []).map(function (t) {
+          return $.extend({}, t, { jenis: 'pemasukan' });
+        });
+        var listKeluar = (data.pengeluaran || []).map(function (t) {
+          return $.extend({}, t, { jenis: 'pengeluaran' });
+        });
+
+        // Gabungkan dan urutkan berdasarkan tanggal (lama → baru)
+        semuaTransaksi = listMasuk.concat(listKeluar).sort(function (a, b) {
+          return a.tanggal.localeCompare(b.tanggal);
+        });
+
+        renderKategoriOptions(daftarKategori);
+        renderDaftarKategori(daftarKategori);
+        hitungSaldo(data.pemasukan || [], data.pengeluaran || []);
+        terapkanFilter();
+      },
+      error: function () {
+        $('#tbody-transaksi').html(
+          '<tr class="info-row"><td colspan="5" style="color:#e74c3c">Gagal memuat data dari server.</td></tr>'
+        );
+        $('#saldo').text('Error').removeClass('positif negatif');
+      }
+    });
+  }
+
+  /* ================================================
+     RENDER DROPDOWN KATEGORI DI FORM
+  ================================================ */
+  function renderKategoriOptions(kategori) {
+    var sel = $('#kategori');
+    var current = sel.val();
+
+    sel.empty().append('<option value="">-- Tanpa Kategori --</option>');
+    $.each(kategori, function (i, cat) {
+      sel.append($('<option>').val(cat.id).text(cat.nama));
+    });
+
+    sel.val(current); // Pertahankan pilihan
+  }
+
+  /* ================================================
+     RENDER DAFTAR KATEGORI DI TAB KATEGORI
+  ================================================ */
+  function renderDaftarKategori(kategori) {
+    var ul = $('#list-kategori');
+    ul.empty();
+
+    if (kategori.length === 0) {
+      ul.append('<li class="kosong">Belum ada kategori.</li>');
+      return;
+    }
+
+    $.each(kategori, function (i, cat) {
+      var nama = $('<span>').text(cat.nama).html(); // Escape XSS
+
+      ul.append(
+        '<li>' +
+          '<span class="cat-nomor">' + (i + 1) + '</span>' +
+          '<span class="cat-nama">' + nama + '</span>' +
+          '<button class="btn btn-sm btn-red btn-hapus-cat" data-id="' + cat.id + '">Hapus</button>' +
+        '</li>'
+      );
+    });
+  }
+
+  /* ================================================
+     PILL FILTER JENIS
+  ================================================ */
+  $('.jenis-pills').on('click', '.pill', function () {
+    filterJenis = $(this).data('jenis');
+
+    // Update tampilan pill aktif
+    $('.pill').removeClass('pill-aktif-pemasukan pill-aktif-pengeluaran');
+    $(this).addClass('pill-aktif-' + filterJenis);
+
+    // Update judul tabel
+    var judul = { pemasukan: '&#128200; Riwayat Pemasukan', pengeluaran: '&#128201; Riwayat Pengeluaran' };
+    $('#judul-riwayat').html(judul[filterJenis]);
+
+    terapkanFilter();
+  });
+
+  /* ================================================
+     FILTER TANGGAL + JENIS — terapkan ke semuaTransaksi
+  ================================================ */
+  function terapkanFilter() {
+    var dari   = $('#filter-dari').val();
+    var sampai = $('#filter-sampai').val();
+
+    var hasil = semuaTransaksi.filter(function (t) {
+      if (dari   && t.tanggal < dari)   return false;
+      if (sampai && t.tanggal > sampai) return false;
+      if (t.jenis !== filterJenis)      return false;
+      return true;
+    });
+
+    renderTabel(hasil);
+    updateRingkasan();
+
+    // Selalu tampilkan info jumlah hasil
+    var totalJenis = semuaTransaksi.filter(function (t) { return t.jenis === filterJenis; }).length;
+    $('#filter-info').html(
+      'Menampilkan <strong>' + hasil.length + '</strong> dari <strong>' + totalJenis + '</strong> transaksi'
+    ).show();
+  }
+
+  // Filter langsung saat tanggal berubah (tanpa tombol)
+  $('#filter-dari, #filter-sampai').on('change', function () {
+    terapkanFilter();
+  });
+
+  /* ================================================
+     UPDATE RINGKASAN TOTAL DI FILTER BAR
+     Selalu tampilkan KEDUA total (tidak ikut filter jenis),
+     hanya ikut filter rentang tanggal.
+  ================================================ */
+  function updateRingkasan() {
+    var dari   = $('#filter-dari').val();
+    var sampai = $('#filter-sampai').val();
+    var totalMasuk = 0, totalKeluar = 0;
+
+    $.each(semuaTransaksi, function (i, t) {
+      if (dari   && t.tanggal < dari)   return; // skip
+      if (sampai && t.tanggal > sampai) return; // skip
+      if (t.jenis === 'pemasukan') totalMasuk  += parseFloat(t.jumlah) || 0;
+      else                         totalKeluar += parseFloat(t.jumlah) || 0;
+    });
+
+    $('#sum-masuk').text(formatRupiah(totalMasuk));
+    $('#sum-keluar').text(formatRupiah(totalKeluar));
+  }
+
+  /* ================================================
+     RENDER TABEL RIWAYAT
+     Kolom Jenis dihapus — sudah jelas dari tab yang aktif.
+     Kategori ditampilkan sebagai tag di kolom Catatan.
+  ================================================ */
+  function renderTabel(transaksi) {
+    var tbody = $('#tbody-transaksi');
+    tbody.empty();
+
+    if (transaksi.length === 0) {
+      tbody.append('<tr class="info-row"><td colspan="4">Tidak ada transaksi.</td></tr>');
+      return;
+    }
+
+    // Terbaru di atas
+    $.each(transaksi.slice().reverse(), function (i, t) {
+      var isPemasukan = (t.jenis === 'pemasukan');
+      var cls    = isPemasukan ? 'pemasukan' : 'pengeluaran';
+      var prefix = isPemasukan ? '+' : '−';
+
+      // Catatan + tag kategori (untuk pengeluaran)
+      var catatan  = t.catatan ? $('<span>').text(t.catatan).html() : '';
+      var tagKat   = (!isPemasukan && t.kategori_nama)
+        ? '<span class="tag-kategori">' + $('<span>').text(t.kategori_nama).html() + '</span> '
+        : '';
+      var isiCatatan = tagKat + catatan || '<em style="color:#ccc">-</em>';
+
+      tbody.append(
+        '<tr>' +
+          '<td>' + formatTanggal(t.tanggal) + '</td>' +
+          '<td class="jumlah ' + cls + '">' + prefix + ' ' + formatRupiah(t.jumlah) + '</td>' +
+          '<td>' + isiCatatan + '</td>' +
+          '<td style="text-align:center;white-space:nowrap">' +
+            '<button class="btn btn-sm btn-red btn-hapus-trx" data-id="' + t.id + '" title="Hapus">&#128465;</button>' +
+          '</td>' +
+        '</tr>'
+      );
+    });
+  }
+
+  /* ================================================
+     HITUNG SALDO
+     Menerima dua array terpisah (pemasukan & pengeluaran)
+     agar perhitungan tidak bergantung pada field 'jenis'.
+  ================================================ */
+  function hitungSaldo(listMasuk, listKeluar) {
+    var totalMasuk = 0, totalKeluar = 0;
+
+    $.each(listMasuk,  function (i, t) { totalMasuk  += parseFloat(t.jumlah) || 0; });
+    $.each(listKeluar, function (i, t) { totalKeluar += parseFloat(t.jumlah) || 0; });
+
+    var saldo = totalMasuk - totalKeluar;
+    var el    = $('#saldo').removeClass('positif negatif');
+
+    if (saldo >= 0) {
+      el.addClass('positif').text(formatRupiah(saldo));
+    } else {
+      el.addClass('negatif').text('−' + formatRupiah(saldo));
+    }
+  }
+
+  /* ================================================
+     SUBMIT FORM TRANSAKSI
+  ================================================ */
+  $('#form-transaksi').on('submit', function (e) {
+    e.preventDefault();
+
+    var jenis = $('#jenis').val();
+    var payload = {
+      action      : 'transaksi',
+      tanggal     : $('#tanggal').val(),
+      jenis       : jenis,
+      kategori_id : (jenis === 'pengeluaran') ? $('#kategori').val() : '',
+      jumlah      : parseFloat($('#jumlah').val()),
+      catatan     : $('#catatan').val().trim()
+    };
+
+    if (!payload.tanggal || !payload.jenis || !(payload.jumlah > 0)) {
+      tampilNotif('#notif-sukses', '#notif-error', 'error');
+      return;
+    }
+
+    var btn = $(this).find('button[type=submit]');
+    btn.prop('disabled', true).text('Menyimpan...');
+
+    $.ajax({
+      url        : 'api.php',
+      method     : 'POST',
+      contentType: 'application/json',
+      data       : JSON.stringify(payload),
+      dataType   : 'json',
+      success    : function (resp) {
+        if (resp.status === 'ok') {
+          tampilNotif('#notif-sukses', '#notif-error', 'sukses');
+          // Reset form
+          $('#jenis').val('');
+          $('#jumlah').val('');
+          $('#catatan').val('');
+          $('#kategori').val('');
+          $('#grup-kategori').hide();
+          muatData();
+
+          // Pindah ke tab Riwayat setelah 1 detik agar notif sempat terbaca
+          setTimeout(function () { pindahTab('riwayat'); }, 1000);
+        } else {
+          tampilNotif('#notif-sukses', '#notif-error', 'error');
+        }
+      },
+      error: function () {
+        tampilNotif('#notif-sukses', '#notif-error', 'error');
+      },
+      complete: function () {
+        btn.prop('disabled', false).text('Simpan Transaksi');
+      }
+    });
+  });
+
+  /* ================================================
+     TAMBAH KATEGORI BARU
+  ================================================ */
+  $('#btn-tambah-kategori').on('click', function () {
+    var nama = $('#input-kategori-baru').val().trim();
+
+    if (!nama) {
+      $('#notif-cat-error').text('&#10007; Nama kategori tidak boleh kosong.');
+      tampilNotif('#notif-cat-sukses', '#notif-cat-error', 'error');
+      return;
+    }
+
+    var btn = $(this).prop('disabled', true).text('...');
+
+    $.ajax({
+      url        : 'api.php',
+      method     : 'POST',
+      contentType: 'application/json',
+      data       : JSON.stringify({ action: 'tambah_kategori', nama: nama }),
+      dataType   : 'json',
+      success    : function (resp) {
+        if (resp.status === 'ok') {
+          $('#input-kategori-baru').val('');
+          $('#notif-cat-sukses').text('\u2713 Kategori "' + resp.kategori.nama + '" ditambahkan.');
+          tampilNotif('#notif-cat-sukses', '#notif-cat-error', 'sukses');
+          muatData();
+        } else {
+          $('#notif-cat-error').text('\u2717 ' + (resp.pesan || 'Terjadi kesalahan.'));
+          tampilNotif('#notif-cat-sukses', '#notif-cat-error', 'error');
+        }
+      },
+      error: function () {
+        tampilNotif('#notif-cat-sukses', '#notif-cat-error', 'error');
+      },
+      complete: function () {
+        btn.prop('disabled', false).text('+ Tambah');
+      }
+    });
+  });
+
+  // Enter di input kategori = klik Tambah
+  $('#input-kategori-baru').on('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); $('#btn-tambah-kategori').trigger('click'); }
+  });
+
+  /* ================================================
+     HAPUS KATEGORI
+  ================================================ */
+  $('#list-kategori').on('click', '.btn-hapus-cat', function () {
+    var id   = $(this).data('id');
+    var nama = $(this).siblings('.cat-nama').text();
+
+    if (!confirm('Hapus kategori "' + nama + '"?\n\nTransaksi lama tidak akan terpengaruh.')) return;
+
+    var btn = $(this).prop('disabled', true).text('...');
+
+    $.ajax({
+      url        : 'api.php',
+      method     : 'POST',
+      contentType: 'application/json',
+      data       : JSON.stringify({ action: 'hapus_kategori', id: id }),
+      dataType   : 'json',
+      success    : function (resp) {
+        if (resp.status === 'ok') {
+          $('#notif-cat-sukses').text('\u2713 Kategori berhasil dihapus.');
+          tampilNotif('#notif-cat-sukses', '#notif-cat-error', 'sukses');
+          muatData();
+        } else {
+          tampilNotif('#notif-cat-sukses', '#notif-cat-error', 'error');
+        }
+      },
+      error: function () {
+        tampilNotif('#notif-cat-sukses', '#notif-cat-error', 'error');
+      },
+      complete: function () {
+        btn.prop('disabled', false).text('Hapus');
+      }
+    });
+  });
+
+  /* ================================================
+     HAPUS TRANSAKSI
+  ================================================ */
+  // Delegasi event (baris di-render dinamis)
+  $('#tbody-transaksi').on('click', '.btn-hapus-trx', function () {
+    var id  = $(this).data('id');
+
+    if (!confirm('Hapus transaksi ini?\nData yang dihapus tidak dapat dikembalikan.')) return;
+
+    var btn = $(this).prop('disabled', true).text('...');
+
+    $.ajax({
+      url        : 'api.php',
+      method     : 'POST',
+      contentType: 'application/json',
+      data       : JSON.stringify({ action: 'hapus_transaksi', id: id }),
+      dataType   : 'json',
+      success    : function (resp) {
+        if (resp.status === 'ok') {
+          tampilNotif('#notif-riwayat-sukses', '#notif-riwayat-error', 'sukses');
+          muatData(); // Refresh semua data
+        } else {
+          tampilNotif('#notif-riwayat-sukses', '#notif-riwayat-error', 'error');
+          btn.prop('disabled', false).html('&#128465;');
+        }
+      },
+      error: function () {
+        tampilNotif('#notif-riwayat-sukses', '#notif-riwayat-error', 'error');
+        btn.prop('disabled', false).html('&#128465;');
+      }
+    });
+  });
+
+  /* ================================================
+     INISIALISASI
+  ================================================ */
+  muatData();
+
+}); // end $(document).ready
+</script>
+
+</body>
+</html>
