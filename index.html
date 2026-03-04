@@ -351,7 +351,7 @@
     tbody tr { border-bottom: 1px solid #f4f4f4; transition: background 0.12s; }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: #f8fafc; }
-    tbody td { padding: 11px 12px; vertical-align: middle; }
+    tbody td { padding: 11px 12px; vertical-align: middle; word-break: break-word; overflow-wrap: break-word; }
 
     /* Badge jenis */
     .badge {
@@ -527,7 +527,7 @@
 
         <div class="form-group">
           <label for="jumlah">Jumlah (Rp)</label>
-          <input type="number" id="jumlah" min="1" placeholder="Contoh: 50000" required>
+          <input type="text" id="jumlah" inputmode="numeric" placeholder="Contoh: 50.000" required>
         </div>
 
         <div class="form-group">
@@ -689,6 +689,15 @@ $(function () {
   function pindahTab(nama) {
     $('[data-tab="' + nama + '"]').trigger('click');
   }
+
+  /* ================================================
+     FORMAT OTOMATIS INPUT JUMLAH
+  ================================================ */
+  $('#jumlah').on('input', function () {
+    var raw = $(this).val().replace(/\./g, '').replace(/[^0-9]/g, '');
+    if (raw === '') { $(this).val(''); return; }
+    $(this).val(parseInt(raw, 10).toLocaleString('id-ID'));
+  });
 
   /* ================================================
      TAMPILKAN/SEMBUNYIKAN DROPDOWN KATEGORI
@@ -922,7 +931,7 @@ $(function () {
       tanggal     : $('#tanggal').val(),
       jenis       : jenis,
       kategori_id : (jenis === 'pengeluaran') ? $('#kategori').val() : '',
-      jumlah      : parseFloat($('#jumlah').val()),
+      jumlah      : parseFloat($('#jumlah').val().replace(/\./g, '')),
       catatan     : $('#catatan').val().trim()
     };
 
