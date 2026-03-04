@@ -549,9 +549,10 @@
     <!-- Filter bar -->
     <div class="filter-bar">
 
-      <!-- Pill: filter jenis (2 tab saja) -->
+      <!-- Pill: filter jenis -->
       <div class="jenis-pills">
-        <button class="pill pill-aktif-pemasukan" data-jenis="pemasukan">&#128200; Pemasukan</button>
+        <button class="pill pill-aktif-semua" data-jenis="semua">&#128203; Semua</button>
+        <button class="pill" data-jenis="pemasukan">&#128200; Pemasukan</button>
         <button class="pill" data-jenis="pengeluaran">&#128201; Pengeluaran</button>
       </div>
 
@@ -582,7 +583,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title" id="judul-riwayat">&#128200; Riwayat Pemasukan</div>
+      <div class="card-title" id="judul-riwayat">&#128203; Semua Transaksi</div>
 
       <div class="notif sukses" id="notif-riwayat-sukses">&#10003; Transaksi berhasil dihapus.</div>
       <div class="notif error"  id="notif-riwayat-error">&#10007; Gagal menghapus. Coba lagi.</div>
@@ -658,7 +659,7 @@ $(function () {
   ================================================ */
   var daftarKategori  = [];
   var semuaTransaksi  = []; // Semua transaksi dari server (untuk filter client-side)
-  var filterJenis     = 'pemasukan'; // 'pemasukan' | 'pengeluaran'
+  var filterJenis     = 'semua'; // 'semua' | 'pemasukan' | 'pengeluaran'
 
   /* ================================================
      TANGGAL DEFAULT = HARI INI
@@ -798,11 +799,15 @@ $(function () {
     filterJenis = $(this).data('jenis');
 
     // Update tampilan pill aktif
-    $('.pill').removeClass('pill-aktif-pemasukan pill-aktif-pengeluaran');
+    $('.pill').removeClass('pill-aktif-semua pill-aktif-pemasukan pill-aktif-pengeluaran');
     $(this).addClass('pill-aktif-' + filterJenis);
 
     // Update judul tabel
-    var judul = { pemasukan: '&#128200; Riwayat Pemasukan', pengeluaran: '&#128201; Riwayat Pengeluaran' };
+    var judul = {
+      semua       : '&#128203; Semua Transaksi',
+      pemasukan   : '&#128200; Riwayat Pemasukan',
+      pengeluaran : '&#128201; Riwayat Pengeluaran'
+    };
     $('#judul-riwayat').html(judul[filterJenis]);
 
     terapkanFilter();
@@ -818,7 +823,7 @@ $(function () {
     var hasil = semuaTransaksi.filter(function (t) {
       if (dari   && t.tanggal < dari)   return false;
       if (sampai && t.tanggal > sampai) return false;
-      if (t.jenis !== filterJenis)      return false;
+      if (filterJenis !== 'semua' && t.jenis !== filterJenis) return false;
       return true;
     });
 
@@ -826,7 +831,9 @@ $(function () {
     updateRingkasan();
 
     // Selalu tampilkan info jumlah hasil
-    var totalJenis = semuaTransaksi.filter(function (t) { return t.jenis === filterJenis; }).length;
+    var totalJenis = filterJenis === 'semua'
+      ? semuaTransaksi.length
+      : semuaTransaksi.filter(function (t) { return t.jenis === filterJenis; }).length;
     $('#filter-info').html(
       'Menampilkan <strong>' + hasil.length + '</strong> dari <strong>' + totalJenis + '</strong> transaksi'
     ).show();
