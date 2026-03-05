@@ -708,9 +708,9 @@ $(function () {
   var hariIni = new Date().toISOString().split('T')[0];
   $('#tanggal').val(hariIni);
 
-  // Filter riwayat default ke hari ini
-  $('#filter-dari').val(hariIni);
-  $('#filter-sampai').val(hariIni);
+  // Filter riwayat: baca dari localStorage, fallback ke hari ini
+  $('#filter-dari').val(localStorage.getItem('filterDari') || hariIni);
+  $('#filter-sampai').val(localStorage.getItem('filterSampai') || hariIni);
 
   /* ================================================
      NAVIGASI TAB
@@ -885,8 +885,10 @@ $(function () {
     ).show();
   }
 
-  // Filter langsung saat tanggal berubah (tanpa tombol)
+  // Filter langsung saat tanggal berubah (tanpa tombol), simpan ke localStorage
   $('#filter-dari, #filter-sampai').on('change', function () {
+    localStorage.setItem('filterDari',   $('#filter-dari').val());
+    localStorage.setItem('filterSampai', $('#filter-sampai').val());
     terapkanFilter();
   });
 
