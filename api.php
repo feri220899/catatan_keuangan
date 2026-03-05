@@ -29,7 +29,7 @@ $DATA_FILE = __DIR__ . '/data.json';
 ===================================================== */
 
 function bacaData(string $path): array {
-    $default = ['pemasukan' => [], 'pengeluaran' => [], 'categories' => []];
+    $default = ['pemasukan' => [], 'pengeluaran' => [], 'categories' => [], 'diinput_oleh' => []];
 
     if (!file_exists($path)) return $default;
 
@@ -38,7 +38,7 @@ function bacaData(string $path): array {
     if (!is_array($data)) return $default;
 
     // Pastikan semua kunci selalu ada
-    foreach (['pemasukan', 'pengeluaran', 'categories'] as $key) {
+    foreach (['pemasukan', 'pengeluaran', 'categories', 'diinput_oleh'] as $key) {
         if (!isset($data[$key])) $data[$key] = [];
     }
 
@@ -124,6 +124,7 @@ if ($method === 'GET') {
         $catatan = mb_substr(trim($input['catatan'] ?? ''), 0, 500);
 
         $data = bacaData($DATA_FILE);
+        $diinput_oleh = $_SESSION['nama'] ?? $_SESSION['username'] ?? '';
 
         if ($jenis === 'pemasukan') {
             // ── Pemasukan: tidak butuh kategori ──
@@ -160,6 +161,9 @@ if ($method === 'GET') {
             ];
             $data['pengeluaran'][] = $transaksi;
         }
+
+        // Simpan info siapa yang menginput — terpisah dari array transaksi
+        $data['diinput_oleh'][$transaksi['id']] = $diinput_oleh;
 
         if (!simpanData($DATA_FILE, $data)) {
             jsonResponse(['status' => 'error', 'pesan' => 'Gagal menyimpan data.'], 500);
@@ -198,6 +202,9 @@ if ($method === 'GET') {
         if (!$found) {
             jsonResponse(['status' => 'error', 'pesan' => 'Transaksi tidak ditemukan.'], 404);
         }
+
+        // Hapus juga entri diinput_oleh untuk transaksi ini
+        unset($data['diinput_oleh'][$id]);
 
         if (!simpanData($DATA_FILE, $data)) {
             jsonResponse(['status' => 'error', 'pesan' => 'Gagal menghapus transaksi.'], 500);

@@ -407,6 +407,18 @@ if (!isLoggedIn()) {
       font-weight: 600;
     }
 
+    /* Tag user yang menginput */
+    .tag-user {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 8px;
+      background: #f3eafb;
+      color: #6c3483;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
     /* Baris info/kosong */
     .info-row td {
       text-align: center;
@@ -688,6 +700,7 @@ $(function () {
   var daftarKategori  = [];
   var semuaTransaksi  = []; // Semua transaksi dari server (untuk filter client-side)
   var filterJenis     = 'semua'; // 'semua' | 'pemasukan' | 'pengeluaran'
+  var mapDiinputOleh  = {}; // { id_transaksi: nama_user }
 
   /* ================================================
      TANGGAL DEFAULT = HARI INI
@@ -752,6 +765,7 @@ $(function () {
       dataType: 'json',
       success : function (data) {
         daftarKategori = data.categories || [];
+        mapDiinputOleh = data.diinput_oleh || {};
 
         // Tampilkan nama user di header
         if (data.nama_user) $('#info-user').text('Halo, ' + data.nama_user);
@@ -917,12 +931,17 @@ $(function () {
       var cls    = isPemasukan ? 'pemasukan' : 'pengeluaran';
       var prefix = isPemasukan ? '+' : '−';
 
-      // Catatan + tag kategori (untuk pengeluaran)
+      // Catatan + tag kategori (untuk pengeluaran) + tag user yang menginput
       var catatan  = t.catatan ? $('<span>').text(t.catatan).html() : '';
       var tagKat   = (!isPemasukan && t.kategori_nama)
         ? '<span class="tag-kategori">' + $('<span>').text(t.kategori_nama).html() + '</span> '
         : '';
+      var namaUser = mapDiinputOleh[t.id] || '';
+      var tagUser  = namaUser
+        ? '<span class="tag-user">&#128100; ' + $('<span>').text(namaUser).html() + '</span>'
+        : '';
       var isiCatatan = tagKat + catatan || '<em style="color:#ccc">-</em>';
+      if (tagUser) isiCatatan += '<br>' + tagUser;
 
       tbody.append(
         '<tr>' +
