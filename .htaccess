@@ -1,0 +1,33 @@
+# ============================================================
+# Keamanan — Aplikasi Catatan Keuangan
+# ============================================================
+
+# Sembunyikan directory listing
+Options -Indexes
+
+# Blokir akses langsung ke file data sensitif
+<FilesMatch "^(data|user)\.json$">
+    Require all denied
+</FilesMatch>
+
+# Blokir akses ke script setup — harus dijalankan via CLI, bukan browser
+<Files "generate_users.php">
+    Require all denied
+</Files>
+
+# Blokir akses ke folder .git
+<DirectoryMatch "\.git">
+    Require all denied
+</DirectoryMatch>
+
+# Security headers
+<IfModule mod_headers.c>
+    # Cegah clickjacking
+    Header always set X-Frame-Options "DENY"
+    # Cegah MIME sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    # Sembunyikan versi PHP dari response header
+    Header always unset X-Powered-By
+    # Batasi referrer info
+    Header always set Referrer-Policy "same-origin"
+</IfModule>

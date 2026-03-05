@@ -1,3 +1,12 @@
+<?php
+require_once __DIR__ . '/auth.php';
+
+// Belum login → paksa ke halaman login
+if (!isLoggedIn()) {
+    header('Location: login.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -26,6 +35,7 @@
     .app-header {
       text-align: center;
       margin-bottom: 16px;
+      position: relative;
     }
 
     .app-header h1 {
@@ -39,6 +49,22 @@
       color: #999;
       margin-top: 2px;
     }
+
+    .btn-logout {
+      position: absolute;
+      top: 0; right: 0;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #f8d7da;
+      color: #721c24;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-logout:hover { background: #f5c6cb; }
 
     /* ===== SALDO CARD ===== */
     .saldo-card {
@@ -467,6 +493,8 @@
   <!-- ===== HEADER ===== -->
   <div class="app-header">
     <h1>&#128181; Catatan Keuangan</h1>
+    <p id="info-user"></p>
+    <a href="logout.php" class="btn-logout">&#128274; Keluar</a>
   </div>
 
   <!-- ===== SALDO — selalu tampil di semua tab ===== -->
@@ -725,6 +753,9 @@ $(function () {
       success : function (data) {
         daftarKategori = data.categories || [];
 
+        // Tampilkan nama user di header
+        if (data.nama_user) $('#info-user').text('Halo, ' + data.nama_user);
+
         // Tandai jenis pada masing-masing record lalu gabungkan
         var listMasuk  = (data.pemasukan  || []).map(function (t) {
           return $.extend({}, t, { jenis: 'pemasukan' });
@@ -743,7 +774,8 @@ $(function () {
         hitungSaldo(data.pemasukan || [], data.pengeluaran || []);
         terapkanFilter();
       },
-      error: function () {
+      error: function (xhr) {
+        if (xhr.status === 401) { window.location.href = 'login.php'; return; }
         $('#tbody-transaksi').html(
           '<tr class="info-row"><td colspan="5" style="color:#e74c3c">Gagal memuat data dari server.</td></tr>'
         );

@@ -1,0 +1,14 @@
+{
+    "users": [
+        {
+            "username": "Ade",
+            "nama": "Istri",
+            "password_hash": "$2y$10$iv5hrAISS5OnZUHwyL54teLDOMiheJNMP3dkfrRG8Hp.AXy4dEbOG"
+        },
+        {
+            "username": "Feri",
+            "nama": "Suami",
+            "password_hash": "$2y$10$jyTR84qsIJqoSiQuMNKpKOk7COh1c6av.vh37As1PhErNfUIHR2.y"
+        }
+    ]
+}

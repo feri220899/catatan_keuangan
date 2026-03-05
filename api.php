@@ -12,15 +12,15 @@
  * POST api.php  action=hapus_kategori    → hapus kategori pengeluaran
  */
 
-header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+// ── Cek sesi login ──────────────────────────────────────────────
+require_once __DIR__ . '/auth.php';
+requireLogin();
+// ───────────────────────────────────────────────────────────────
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
+header('Content-Type: application/json; charset=utf-8');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+
 
 $DATA_FILE = __DIR__ . '/data.json';
 
@@ -79,7 +79,9 @@ $method = $_SERVER['REQUEST_METHOD'];
 // ——— GET: kembalikan semua data ———
 if ($method === 'GET') {
 
-    jsonResponse(bacaData($DATA_FILE));
+    $data = bacaData($DATA_FILE);
+    $data['nama_user'] = $_SESSION['nama'] ?? $_SESSION['username'] ?? '';
+    jsonResponse($data);
 
 // ——— POST: tentukan aksi berdasarkan field 'action' ———
 } elseif ($method === 'POST') {
