@@ -377,7 +377,41 @@ if (!isLoggedIn()) {
     tbody tr { border-bottom: 1px solid #f4f4f4; transition: background 0.12s; }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: #f8fafc; }
-    tbody td { padding: 11px 12px; vertical-align: middle; word-break: break-word; overflow-wrap: break-word; }
+    tbody td { padding: 11px 12px; vertical-align: middle; white-space: nowrap; }
+    tbody td.td-catatan { white-space: nowrap; }
+
+    /* Catatan terpotong + tooltip */
+    .catatan-singkat {
+      cursor: pointer;
+      border-bottom: 1px dashed #aaa;
+      color: #333;
+    }
+    .catatan-singkat:hover { color: #2c3e50; border-color: #2c3e50; }
+
+    .tooltip-popup {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      background: #2c3e50;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      max-width: 260px;
+      line-height: 1.5;
+      word-break: break-word;
+      white-space: normal;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+    .tooltip-popup::after {
+      content: '';
+      position: absolute;
+      top: -6px; left: 16px;
+      border-width: 0 6px 6px;
+      border-style: solid;
+      border-color: transparent transparent #2c3e50;
+    }
 
     /* Badge jenis */
     .badge {
@@ -634,12 +668,14 @@ if (!isLoggedIn()) {
             <tr>
               <th>Tanggal</th>
               <th>Jumlah</th>
-              <th>Catatan / Kategori</th>
+              <th>Kategori</th>
+              <th>Catatan</th>
+              <th>Diinput Oleh</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="tbody-transaksi">
-            <tr class="info-row"><td colspan="4">Memuat data...</td></tr>
+            <tr class="info-row"><td colspan="6">Memuat data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -670,6 +706,9 @@ if (!isLoggedIn()) {
   </div>
 
 </div><!-- /container -->
+
+<!-- Tooltip popup untuk catatan panjang -->
+<div class="tooltip-popup" id="tooltip-catatan"></div>
 
 <script>
 $(function () {
@@ -923,7 +962,7 @@ $(function () {
     tbody.empty();
 
     if (transaksi.length === 0) {
-      tbody.append('<tr class="info-row"><td colspan="4">Tidak ada transaksi.</td></tr>');
+      tbody.append('<tr class="info-row"><td colspan="6">Tidak ada transaksi.</td></tr>');
       return;
     }
 
@@ -933,23 +972,35 @@ $(function () {
       var cls    = isPemasukan ? 'pemasukan' : 'pengeluaran';
       var prefix = isPemasukan ? '+' : '−';
 
-      // Catatan + tag kategori (untuk pengeluaran) + tag user yang menginput
-      var catatan  = t.catatan ? $('<span>').text(t.catatan).html() : '';
-      var tagKat   = (!isPemasukan && t.kategori_nama)
-        ? '<span class="tag-kategori">' + $('<span>').text(t.kategori_nama).html() + '</span> '
-        : '';
+      var kategori = (!isPemasukan && t.kategori_nama)
+        ? '<span class="tag-kategori">' + $('<span>').text(t.kategori_nama).html() + '</span>'
+        : '<em style="color:#ccc">-</em>';
+
+      var catatanTeks = t.catatan || '';
+      var catatan;
+      if (!catatanTeks) {
+        catatan = '<em style="color:#ccc">-</em>';
+      } else if (catatanTeks.length > 15) {
+        var singkat = $('<span>').text(catatanTeks.substring(0, 15)).html();
+        var full    = $('<span>').text(catatanTeks).html();
+        catatan = '<span class="catatan-singkat" data-full="' + full.replace(/"/g, '&quot;') + '">' + singkat + '...</span>';
+      } else {
+        catatan = $('<span>').text(catatanTeks).html();
+      }
+
       var namaUser = mapDiinputOleh[t.id] || '';
-      var tagUser  = namaUser
-        ? '<span class="tag-user">&#128100; ' + $('<span>').text(namaUser).html() + '</span>'
-        : '';
-      var isiCatatan = tagKat + catatan || '<em style="color:#ccc">-</em>';
-      if (tagUser) isiCatatan += '<br>' + tagUser;
+      var ikonUser = (namaUser === 'Istri') ? '&#128105;' : '&#128104;';
+      var diinputOleh = namaUser
+        ? '<span class="tag-user">' + ikonUser + ' ' + $('<span>').text(namaUser).html() + '</span>'
+        : '<em style="color:#ccc">-</em>';
 
       tbody.append(
         '<tr>' +
           '<td>' + formatTanggal(t.tanggal) + '</td>' +
           '<td class="jumlah ' + cls + '">' + prefix + ' ' + formatRupiah(t.jumlah) + '</td>' +
-          '<td>' + isiCatatan + '</td>' +
+          '<td>' + kategori + '</td>' +
+          '<td class="td-catatan">' + catatan + '</td>' +
+          '<td>' + diinputOleh + '</td>' +
           '<td style="text-align:center;white-space:nowrap">' +
             '<button class="btn btn-sm btn-red btn-hapus-trx" data-id="' + t.id + '" title="Hapus">&#128465;</button>' +
           '</td>' +
@@ -1147,6 +1198,34 @@ $(function () {
       }
     });
   });
+
+  /* ================================================
+     TOOLTIP CATATAN PANJANG
+  ================================================ */
+  var $tooltip = $('#tooltip-catatan');
+
+  $(document).on('click', '.catatan-singkat', function (e) {
+    var teks = $(this).data('full');
+    $tooltip.html(teks).show();
+    posisiTooltip(e);
+    e.stopPropagation();
+  });
+
+  $(document).on('click', function () {
+    $tooltip.hide();
+  });
+
+  function posisiTooltip(e) {
+    var x = e.clientX, y = e.clientY + 12;
+    var lebar = $tooltip.outerWidth() || 260;
+
+    // Jangan keluar dari sisi kanan layar
+    if (x + lebar > $(window).width() - 10) {
+      x = $(window).width() - lebar - 10;
+    }
+
+    $tooltip.css({ left: x, top: y });
+  }
 
   /* ================================================
      INISIALISASI
