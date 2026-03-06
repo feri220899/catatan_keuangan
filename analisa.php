@@ -353,6 +353,7 @@ $js_data = [
       padding-bottom: 10px;
       border-bottom: 2px solid #f0f4f8;
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 7px;
     }
@@ -435,6 +436,41 @@ $js_data = [
 
     .td-jumlah-masuk  { font-weight: 700; color: #27ae60; white-space: nowrap; }
     .td-jumlah-keluar { font-weight: 700; color: #e74c3c; white-space: nowrap; }
+
+    #tbl-top-keluar td { white-space: nowrap; }
+
+    /* Catatan terpotong + tooltip (sama dengan index.php) */
+    .catatan-singkat {
+      cursor: pointer;
+      border-bottom: 1px dashed #aaa;
+      color: #333;
+    }
+    .catatan-singkat:hover { color: #2c3e50; border-color: #2c3e50; }
+
+    .tooltip-popup {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      background: #2c3e50;
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      max-width: 260px;
+      line-height: 1.5;
+      word-break: break-word;
+      white-space: normal;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+    .tooltip-popup::after {
+      content: '';
+      position: absolute;
+      top: -6px; left: 16px;
+      border-width: 0 6px 6px;
+      border-style: solid;
+      border-color: transparent transparent #2c3e50;
+    }
 
     .tag-cat {
       display: inline-block;
@@ -585,6 +621,16 @@ $js_data = [
       font-size: 0.9rem;
     }
 
+    /* ===== CHART RANGE LABEL ===== */
+    .chart-range {
+      flex: 0 0 100%;
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: #b0bec5;
+      margin-top: -4px;
+      letter-spacing: 0.2px;
+    }
+
     /* ===== RESPONSIVE ===== */
     @media (max-width: 420px) {
       .kpi-value { font-size: 1rem; }
@@ -605,7 +651,7 @@ $js_data = [
       <span class="header-icon">&#128202;</span>
       <div>
         <div class="header-title">Analisa Keuangan</div>
-        <div class="header-sub"><?= htmlspecialchars($label_range) ?></div>
+        <div class="header-sub" id="header-sub"><?= htmlspecialchars($label_range) ?></div>
       </div>
     </div>
     <a href="index.php" class="btn-back">&#8592; Kembali</a>
@@ -641,12 +687,15 @@ $js_data = [
       <input type="hidden" name="semua" id="f-semua" value="<?= $is_semua ? '1' : '0' ?>">
 
     </form>
+    <div id="filter-loading" style="display:none;text-align:center;padding:8px 0;color:#3498db;font-size:0.82rem;">
+      &#9203; Memuat data...
+    </div>
   </div>
 
   <!-- ===== KPI CARDS ===== -->
   <div class="section-title">
     Ringkasan Keseluruhan
-    <span class="filter-badge">&#128197; <?= htmlspecialchars($label_range) ?></span>
+    <span class="filter-badge">&#128197; <span id="filter-badge-text"><?= htmlspecialchars($label_range) ?></span></span>
   </div>
 
   <div class="kpi-grid">
@@ -678,17 +727,17 @@ $js_data = [
   <div class="hscroll-row">
     <!-- Donut: rasio -->
     <div class="chart-card">
-      <div class="chart-title"><span class="ct-icon">&#11096;</span> Rasio</div>
+      <div class="chart-title"><span class="ct-icon">&#11096;</span> Rasio<span class="chart-range"></span></div>
       <div class="donut-item-label" style="font-size:0.68rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.4px;text-align:center;margin-bottom:8px;">Pemasukan vs Pengeluaran</div>
-      <div class="chart-wrap">
+      <div class="chart-wrap" id="wrap-donut">
         <canvas id="chart-donut"></canvas>
       </div>
     </div>
 
     <!-- Donut: per kategori -->
     <div class="chart-card">
-      <div class="chart-title"><span class="ct-icon">&#11096;</span> Per Kategori</div>
-      <div class="chart-wrap">
+      <div class="chart-title"><span class="ct-icon">&#11096;</span> Per Kategori<span class="chart-range"></span></div>
+      <div class="chart-wrap" id="wrap-kategori-donut">
         <canvas id="chart-kategori-donut"></canvas>
       </div>
     </div>
@@ -697,8 +746,8 @@ $js_data = [
 
   <!-- Bar: pengeluaran per kategori -->
   <div class="chart-card">
-    <div class="chart-title"><span class="ct-icon">&#128201;</span> Pengeluaran per Kategori</div>
-    <div class="chart-wrap">
+    <div class="chart-title"><span class="ct-icon">&#128201;</span> Pengeluaran per Kategori<span class="chart-range"></span></div>
+    <div class="chart-wrap" id="wrap-kategori-bar">
       <canvas id="chart-kategori-bar"></canvas>
     </div>
   </div>
@@ -707,15 +756,15 @@ $js_data = [
   <div class="section-title">Tren Harian</div>
 
   <div class="chart-card">
-    <div class="chart-title"><span class="ct-icon">&#128200;</span> Pemasukan vs Pengeluaran per Hari</div>
-    <div class="chart-wrap">
+    <div class="chart-title"><span class="ct-icon">&#128200;</span> Pemasukan vs Pengeluaran per Hari<span class="chart-range"></span></div>
+    <div class="chart-wrap" id="wrap-tren">
       <canvas id="chart-tren"></canvas>
     </div>
   </div>
 
   <div class="chart-card">
-    <div class="chart-title"><span class="ct-icon">&#128176;</span> Saldo Kumulatif</div>
-    <div class="chart-wrap">
+    <div class="chart-title"><span class="ct-icon">&#128176;</span> Saldo Kumulatif<span class="chart-range"></span></div>
+    <div class="chart-wrap" id="wrap-saldo">
       <canvas id="chart-saldo-kumulatif"></canvas>
     </div>
   </div>
@@ -724,8 +773,8 @@ $js_data = [
   <div class="section-title">Kontribusi Per Pengguna</div>
 
   <div class="chart-card">
-    <div class="chart-title"><span class="ct-icon">&#128101;</span> Pemasukan &amp; Pengeluaran per Pengguna</div>
-    <div class="chart-wrap">
+    <div class="chart-title"><span class="ct-icon">&#128101;</span> Pemasukan &amp; Pengeluaran per Pengguna<span class="chart-range"></span></div>
+    <div class="chart-wrap" id="wrap-user">
       <canvas id="chart-user"></canvas>
     </div>
     <div class="insight-box" id="insight-user"></div>
@@ -735,7 +784,7 @@ $js_data = [
   <div class="section-title">Top Transaksi</div>
 
   <div class="chart-card">
-    <div class="chart-title"><span class="ct-icon">&#128201;</span> 5 Pengeluaran Terbesar</div>
+    <div class="chart-title"><span class="ct-icon">&#128201;</span> 5 Pengeluaran Terbesar<span class="chart-range"></span></div>
     <div class="table-wrapper">
       <table id="tbl-top-keluar">
         <thead>
@@ -754,7 +803,7 @@ $js_data = [
   </div>
 
   <div class="chart-card">
-    <div class="chart-title"><span class="ct-icon">&#128200;</span> 5 Pemasukan Terbesar</div>
+    <div class="chart-title"><span class="ct-icon">&#128200;</span> 5 Pemasukan Terbesar<span class="chart-range"></span></div>
     <div class="table-wrapper">
       <table id="tbl-top-masuk">
         <thead>
@@ -773,96 +822,10 @@ $js_data = [
 
 </div><!-- /container -->
 
+<!-- Tooltip popup untuk catatan panjang -->
+<div class="tooltip-popup" id="tooltip-catatan"></div>
+
 <script>
-/* ============================================================
-   FILTER PRESET BUTTONS
-============================================================ */
-(function () {
-  const dari   = document.getElementById('f-dari');
-  const sampai = document.getElementById('f-sampai');
-  const fSemua = document.getElementById('f-semua');
-
-  function pad(n) { return String(n).padStart(2, '0'); }
-  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
-
-  const presets = {
-    'hari-ini': function() {
-      const t = new Date();
-      return [fmt(t), fmt(t)];
-    },
-    'minggu-ini': function() {
-      const t = new Date();
-      const day = t.getDay() || 7;          // Senin = 1
-      const mon = new Date(t);
-      mon.setDate(t.getDate() - day + 1);
-      return [fmt(mon), fmt(t)];
-    },
-    'bulan-ini': function() {
-      const t = new Date();
-      const awal = new Date(t.getFullYear(), t.getMonth(), 1);
-      return [fmt(awal), fmt(t)];
-    },
-    'bulan-lalu': function() {
-      const t = new Date();
-      const awal = new Date(t.getFullYear(), t.getMonth() - 1, 1);
-      const akhir = new Date(t.getFullYear(), t.getMonth(), 0);
-      return [fmt(awal), fmt(akhir)];
-    },
-    'semua': function() { return [null, null]; }
-  };
-
-  // Tandai preset yang sedang aktif
-  const curDari   = dari.value;
-  const curSampai = sampai.value;
-  const isSemua   = fSemua.value === '1';
-
-  document.querySelectorAll('.preset-pill').forEach(function(btn) {
-    const key = btn.dataset.preset;
-    if (key === 'semua' && isSemua) {
-      btn.classList.add('pill-active');
-      return;
-    }
-    if (!isSemua && presets[key]) {
-      const [d, s] = presets[key]();
-      if (d && s && d === curDari && s === curSampai) {
-        btn.classList.add('pill-active');
-      }
-    }
-
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('pill-active'));
-      this.classList.add('pill-active');
-
-      if (key === 'semua') {
-        fSemua.value = '1';
-        // Set nilai input ke seluruh rentang agar form tetap valid
-        dari.value   = '2000-01-01';
-        sampai.value = new Date().toISOString().split('T')[0];
-      } else {
-        fSemua.value = '0';
-        const [d, s] = presets[key]();
-        dari.value   = d;
-        sampai.value = s;
-      }
-      document.getElementById('form-filter').submit();
-    });
-  });
-
-  // Auto-submit saat input tanggal berubah langsung
-  [dari, sampai].forEach(function(el) {
-    el.addEventListener('change', function() {
-      fSemua.value = '0';
-      document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('pill-active'));
-      document.getElementById('form-filter').submit();
-    });
-  });
-})();
-
-/* ============================================================
-   DATA DARI PHP
-============================================================ */
-const DATA = <?= json_encode($js_data, JSON_UNESCAPED_UNICODE) ?>;
-
 /* ============================================================
    UTILITAS
 ============================================================ */
@@ -872,56 +835,19 @@ function rp(angka) {
   }
   return 'Rp ' + Math.abs(angka).toLocaleString('id-ID');
 }
-
-function rpFull(angka) {
-  return 'Rp ' + Math.abs(angka).toLocaleString('id-ID');
-}
-
+function rpFull(angka) { return 'Rp ' + Math.abs(angka).toLocaleString('id-ID'); }
 function tgl(str) {
   if (!str) return '-';
   const p = str.split('-');
   return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : str;
 }
-
-function rankClass(i) {
-  return i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
-}
-
+function rankClass(i) { return i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : ''; }
 function escHtml(s) {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 /* ============================================================
-   KPI CARDS
-============================================================ */
-(function () {
-  const saldo = DATA.saldo;
-  const elSaldo = document.getElementById('kpi-saldo');
-  elSaldo.textContent = (saldo < 0 ? '−' : '') + rpFull(saldo);
-  if (saldo < 0) elSaldo.classList.add('negatif');
-
-  const pct = DATA.total_pemasukan > 0
-    ? ((saldo / DATA.total_pemasukan) * 100).toFixed(1)
-    : 0;
-  document.getElementById('kpi-saldo-sub').textContent = pct + '% dari pemasukan';
-
-  document.getElementById('kpi-total-trx').textContent = DATA.total_transaksi + ' transaksi';
-  document.getElementById('kpi-total-trx-sub').textContent =
-    DATA.cnt_pemasukan + ' masuk · ' + DATA.cnt_pengeluaran + ' keluar';
-
-  document.getElementById('kpi-pemasukan').textContent = rp(DATA.total_pemasukan);
-  document.getElementById('kpi-pemasukan-sub').textContent =
-    'Rata-rata ' + rp(DATA.rata_pemasukan) + '/trx';
-
-  document.getElementById('kpi-pengeluaran').textContent = rp(DATA.total_pengeluaran);
-  document.getElementById('kpi-pengeluaran-sub').textContent =
-    'Rata-rata ' + rp(DATA.rata_pengeluaran) + '/trx';
-})();
-
-/* ============================================================
-   WARNA PALETTE
+   PALETTE
 ============================================================ */
 const PALETTE = [
   '#3498db','#e67e22','#9b59b6','#1abc9c',
@@ -929,360 +855,371 @@ const PALETTE = [
   '#d35400','#8e44ad','#2980b9','#27ae60',
 ];
 
-const CHART_DEFAULTS = {
-  plugins: {
-    legend: {
-      labels: { font: { family: "'Segoe UI', Arial, sans-serif", size: 11 }, boxWidth: 12, padding: 10 }
-    },
-    tooltip: {
-      callbacks: {
-        label: ctx => ' ' + rpFull(ctx.raw)
-      }
-    }
-  }
-};
+/* ============================================================
+   CHART MANAGEMENT
+============================================================ */
+let _charts = {};
+const _canvasHtml = {};
+
+function _destroyCharts() {
+  Object.values(_charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  _charts = {};
+  Object.entries(_canvasHtml).forEach(([id, html]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
+}
 
 /* ============================================================
-   CHART 1 — DONUT: Rasio Pemasukan vs Pengeluaran
+   RENDER KPI
 ============================================================ */
-new Chart(document.getElementById('chart-donut'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Pemasukan', 'Pengeluaran'],
-    datasets: [{
-      data: [DATA.total_pemasukan, DATA.total_pengeluaran],
-      backgroundColor: ['#27ae60', '#e74c3c'],
-      borderWidth: 2,
-      borderColor: '#fff',
-    }]
-  },
-  options: {
-    cutout: '62%',
-    maintainAspectRatio: true,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { font: { size: 10 }, boxWidth: 10, padding: 6, usePointStyle: true }
-      },
-      tooltip: { callbacks: { label: ctx => ' ' + rp(ctx.raw) } }
-    }
-  }
-});
+function renderKPI(D) {
+  const saldo = D.saldo;
+  const elSaldo = document.getElementById('kpi-saldo');
+  elSaldo.textContent = (saldo < 0 ? '−' : '') + rpFull(saldo);
+  elSaldo.classList.toggle('negatif', saldo < 0);
+
+  const pct = D.total_pemasukan > 0 ? ((saldo / D.total_pemasukan) * 100).toFixed(1) : 0;
+  document.getElementById('kpi-saldo-sub').textContent = pct + '% dari pemasukan';
+  document.getElementById('kpi-total-trx').textContent = D.total_transaksi + ' transaksi';
+  document.getElementById('kpi-total-trx-sub').textContent = D.cnt_pemasukan + ' masuk \u00b7 ' + D.cnt_pengeluaran + ' keluar';
+  document.getElementById('kpi-pemasukan').textContent = rp(D.total_pemasukan);
+  document.getElementById('kpi-pemasukan-sub').textContent = 'Rata-rata ' + rp(D.rata_pemasukan) + '/trx';
+  document.getElementById('kpi-pengeluaran').textContent = rp(D.total_pengeluaran);
+  document.getElementById('kpi-pengeluaran-sub').textContent = 'Rata-rata ' + rp(D.rata_pengeluaran) + '/trx';
+}
 
 /* ============================================================
-   CHART 2 — DONUT: Pengeluaran per Kategori
+   RENDER CHARTS
 ============================================================ */
-(function () {
-  const labels = DATA.per_kategori.map(d => d.kategori);
-  const values = DATA.per_kategori.map(d => d.total);
-  const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
-
-  if (labels.length === 0) {
-    document.getElementById('chart-kategori-donut').parentElement.innerHTML =
-      '<div class="no-data">Belum ada data pengeluaran</div>';
-    return;
-  }
-
-  new Chart(document.getElementById('chart-kategori-donut'), {
+function renderChartDonut(D) {
+  _charts.donut = new Chart(document.getElementById('chart-donut'), {
     type: 'doughnut',
     data: {
-      labels,
-      datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }]
+      labels: ['Pemasukan', 'Pengeluaran'],
+      datasets: [{ data: [D.total_pemasukan, D.total_pengeluaran], backgroundColor: ['#27ae60','#e74c3c'], borderWidth: 2, borderColor: '#fff' }]
     },
     options: {
-      cutout: '58%',
-      maintainAspectRatio: true,
+      cutout: '62%', maintainAspectRatio: true,
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { font: { size: 10 }, boxWidth: 10, padding: 4, usePointStyle: true }
-        },
+        legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10, padding: 6, usePointStyle: true } },
         tooltip: { callbacks: { label: ctx => ' ' + rp(ctx.raw) } }
       }
     }
   });
-})();
+}
 
-/* ============================================================
-   CHART 3 — BAR HORIZONTAL: Pengeluaran per Kategori
-============================================================ */
-(function () {
-  const labels = DATA.per_kategori.map(d => d.kategori);
-  const values = DATA.per_kategori.map(d => d.total);
+function renderChartKategoriDonut(D) {
+  const labels = D.per_kategori.map(d => d.kategori);
+  const values = D.per_kategori.map(d => d.total);
   const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
-
-  if (labels.length === 0) {
-    document.getElementById('chart-kategori-bar').parentElement.innerHTML =
-      '<div class="no-data">Belum ada data kategori</div>';
+  if (!labels.length) {
+    document.getElementById('wrap-kategori-donut').innerHTML = '<div class="no-data">Belum ada data pengeluaran</div>';
     return;
   }
-
-  new Chart(document.getElementById('chart-kategori-bar'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Pengeluaran',
-        data: values,
-        backgroundColor: colors.map(c => c + 'cc'),
-        borderColor: colors,
-        borderWidth: 1.5,
-        borderRadius: 6,
-      }]
-    },
+  _charts.kategoriDonut = new Chart(document.getElementById('chart-kategori-donut'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
     options: {
-      indexAxis: 'y',
-      responsive: true,
+      cutout: '58%', maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10, padding: 4, usePointStyle: true } },
+        tooltip: { callbacks: { label: ctx => ' ' + rp(ctx.raw) } }
+      }
+    }
+  });
+}
+
+function renderChartKategoriBar(D) {
+  const labels = D.per_kategori.map(d => d.kategori);
+  const values = D.per_kategori.map(d => d.total);
+  const colors = labels.map((_, i) => PALETTE[i % PALETTE.length]);
+  if (!labels.length) {
+    document.getElementById('wrap-kategori-bar').innerHTML = '<div class="no-data">Belum ada data kategori</div>';
+    return;
+  }
+  _charts.kategoriBar = new Chart(document.getElementById('chart-kategori-bar'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Pengeluaran', data: values, backgroundColor: colors.map(c => c + 'cc'), borderColor: colors, borderWidth: 1.5, borderRadius: 6 }] },
+    options: {
+      indexAxis: 'y', responsive: true,
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: ctx => ' ' + rpFull(ctx.raw) } }
       },
       scales: {
-        x: {
-          ticks: { callback: v => rp(v), font: { size: 10 } },
-          grid: { color: '#f0f4f8' }
-        },
+        x: { ticks: { callback: v => rp(v), font: { size: 10 } }, grid: { color: '#f0f4f8' } },
         y: { ticks: { font: { size: 11 } }, grid: { display: false } }
       }
     }
   });
-})();
+}
 
-/* ============================================================
-   CHART 4 — LINE: Tren Harian
-============================================================ */
-(function () {
-  if (DATA.tren_labels.length === 0) {
-    document.getElementById('chart-tren').parentElement.innerHTML =
-      '<div class="no-data">Belum ada data transaksi</div>';
+function renderChartTren(D) {
+  if (!D.tren_labels.length) {
+    document.getElementById('wrap-tren').innerHTML = '<div class="no-data">Belum ada data transaksi</div>';
     return;
   }
-
-  new Chart(document.getElementById('chart-tren'), {
+  _charts.tren = new Chart(document.getElementById('chart-tren'), {
     type: 'bar',
     data: {
-      labels: DATA.tren_labels,
+      labels: D.tren_labels,
       datasets: [
-        {
-          label: 'Pemasukan',
-          data: DATA.tren_masuk,
-          backgroundColor: '#27ae6066',
-          borderColor: '#27ae60',
-          borderWidth: 2,
-          borderRadius: 5,
-          order: 2,
-        },
-        {
-          label: 'Pengeluaran',
-          data: DATA.tren_keluar,
-          backgroundColor: '#e74c3c66',
-          borderColor: '#e74c3c',
-          borderWidth: 2,
-          borderRadius: 5,
-          order: 1,
-        }
+        { label: 'Pemasukan',    data: D.tren_masuk,  backgroundColor: '#27ae6066', borderColor: '#27ae60', borderWidth: 2, borderRadius: 5, order: 2 },
+        { label: 'Pengeluaran',  data: D.tren_keluar, backgroundColor: '#e74c3c66', borderColor: '#e74c3c', borderWidth: 2, borderRadius: 5, order: 1 }
       ]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: {
-          position: 'top',
-          labels: { font: { size: 11 }, boxWidth: 12, padding: 10 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ' ' + ctx.dataset.label + ': ' + rpFull(ctx.raw)
-          }
-        }
+        legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + rpFull(ctx.raw) } }
       },
       scales: {
         x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-        y: {
-          ticks: { callback: v => rp(v), font: { size: 10 } },
-          grid: { color: '#f0f4f8' }
-        }
+        y: { ticks: { callback: v => rp(v), font: { size: 10 } }, grid: { color: '#f0f4f8' } }
       }
     }
   });
-})();
+}
 
-/* ============================================================
-   CHART 5 — LINE: Saldo Kumulatif
-============================================================ */
-(function () {
-  if (DATA.tren_labels.length === 0) {
-    document.getElementById('chart-saldo-kumulatif').parentElement.innerHTML =
-      '<div class="no-data">Belum ada data</div>';
+function renderChartSaldo(D) {
+  if (!D.tren_labels.length) {
+    document.getElementById('wrap-saldo').innerHTML = '<div class="no-data">Belum ada data</div>';
     return;
   }
-
-  const finalSaldo = DATA.saldo_kumulatif[DATA.saldo_kumulatif.length - 1] || 0;
+  const finalSaldo  = D.saldo_kumulatif[D.saldo_kumulatif.length - 1] || 0;
   const borderColor = finalSaldo >= 0 ? '#2c3e50' : '#e74c3c';
   const bgColor     = finalSaldo >= 0 ? '#2c3e5015' : '#e74c3c15';
-
-  new Chart(document.getElementById('chart-saldo-kumulatif'), {
+  _charts.saldo = new Chart(document.getElementById('chart-saldo-kumulatif'), {
     type: 'line',
     data: {
-      labels: DATA.tren_labels,
-      datasets: [{
-        label: 'Saldo',
-        data: DATA.saldo_kumulatif,
-        borderColor: borderColor,
-        backgroundColor: bgColor,
-        borderWidth: 2.5,
-        pointRadius: 4,
-        pointBackgroundColor: borderColor,
-        fill: true,
-        tension: 0.35,
-      }]
+      labels: D.tren_labels,
+      datasets: [{ label: 'Saldo', data: D.saldo_kumulatif, borderColor, backgroundColor: bgColor, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: borderColor, fill: true, tension: 0.35 }]
     },
     options: {
       responsive: true,
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ' Saldo: ' + (ctx.raw < 0 ? '−' : '') + rpFull(ctx.raw)
-          }
-        }
+        tooltip: { callbacks: { label: ctx => ' Saldo: ' + (ctx.raw < 0 ? '−' : '') + rpFull(ctx.raw) } }
       },
       scales: {
         x: { ticks: { font: { size: 10 } }, grid: { display: false } },
-        y: {
-          ticks: { callback: v => rp(v), font: { size: 10 } },
-          grid: { color: '#f0f4f8' }
-        }
+        y: { ticks: { callback: v => rp(v), font: { size: 10 } }, grid: { color: '#f0f4f8' } }
       }
     }
   });
-})();
+}
 
-/* ============================================================
-   CHART 6 — BAR GROUPED: Kontribusi per User
-============================================================ */
-(function () {
-  const users = DATA.all_users;
-  if (users.length === 0) {
-    document.getElementById('chart-user').parentElement.innerHTML =
-      '<div class="no-data">Belum ada data pengguna</div>';
+function renderChartUser(D) {
+  const users = D.all_users;
+  if (!users.length) {
+    document.getElementById('wrap-user').innerHTML = '<div class="no-data">Belum ada data pengguna</div>';
+    document.getElementById('insight-user').innerHTML = 'Tidak ada data pengguna.';
     return;
   }
-
-  new Chart(document.getElementById('chart-user'), {
+  _charts.user = new Chart(document.getElementById('chart-user'), {
     type: 'bar',
     data: {
       labels: users,
       datasets: [
-        {
-          label: 'Pemasukan',
-          data: DATA.user_masuk,
-          backgroundColor: '#27ae6099',
-          borderColor: '#27ae60',
-          borderWidth: 1.5,
-          borderRadius: 5,
-        },
-        {
-          label: 'Pengeluaran',
-          data: DATA.user_keluar,
-          backgroundColor: '#e74c3c99',
-          borderColor: '#e74c3c',
-          borderWidth: 1.5,
-          borderRadius: 5,
-        }
+        { label: 'Pemasukan',   data: D.user_masuk,  backgroundColor: '#27ae6099', borderColor: '#27ae60', borderWidth: 1.5, borderRadius: 5 },
+        { label: 'Pengeluaran', data: D.user_keluar, backgroundColor: '#e74c3c99', borderColor: '#e74c3c', borderWidth: 1.5, borderRadius: 5 }
       ]
     },
     options: {
       responsive: true,
       plugins: {
-        legend: {
-          position: 'top',
-          labels: { font: { size: 11 }, boxWidth: 12, padding: 10 }
-        },
-        tooltip: {
-          callbacks: {
-            label: ctx => ' ' + ctx.dataset.label + ': ' + rpFull(ctx.raw)
-          }
-        }
+        legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + rpFull(ctx.raw) } }
       },
       scales: {
         x: { ticks: { font: { size: 11 } }, grid: { display: false } },
-        y: {
-          ticks: { callback: v => rp(v), font: { size: 10 } },
-          grid: { color: '#f0f4f8' }
-        }
+        y: { ticks: { callback: v => rp(v), font: { size: 10 } }, grid: { color: '#f0f4f8' } }
       }
     }
   });
-
-  // Insight teks
-  const topMasukIdx  = DATA.user_masuk.indexOf(Math.max(...DATA.user_masuk));
-  const topKeluarIdx = DATA.user_keluar.indexOf(Math.max(...DATA.user_keluar));
+  const topMasukIdx  = D.user_masuk.indexOf(Math.max(...D.user_masuk));
+  const topKeluarIdx = D.user_keluar.indexOf(Math.max(...D.user_keluar));
   const insight = [];
-  if (users[topMasukIdx]) {
-    insight.push('<strong>' + escHtml(users[topMasukIdx]) + '</strong> memasukkan pemasukan terbesar ('
-      + rpFull(DATA.user_masuk[topMasukIdx]) + ').');
-  }
-  if (users[topKeluarIdx]) {
-    insight.push('<strong>' + escHtml(users[topKeluarIdx]) + '</strong> mencatat pengeluaran terbanyak ('
-      + rpFull(DATA.user_keluar[topKeluarIdx]) + ').');
-  }
+  if (users[topMasukIdx])  insight.push('<strong>' + escHtml(users[topMasukIdx])  + '</strong> memasukkan pemasukan terbesar ('  + rpFull(D.user_masuk[topMasukIdx])  + ').');
+  if (users[topKeluarIdx]) insight.push('<strong>' + escHtml(users[topKeluarIdx]) + '</strong> mencatat pengeluaran terbanyak (' + rpFull(D.user_keluar[topKeluarIdx]) + ').');
   document.getElementById('insight-user').innerHTML = insight.join(' ') || 'Tidak ada data pengguna.';
-})();
+}
 
 /* ============================================================
-   TABEL: Top 5 Pengeluaran Terbesar
+   RENDER TABLES
 ============================================================ */
-(function () {
+function renderTableKeluar(D) {
   const tbody = document.querySelector('#tbl-top-keluar tbody');
-  if (!DATA.top_pengeluaran.length) {
+  if (!D.top_pengeluaran.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="no-data">Belum ada pengeluaran</td></tr>';
     return;
   }
-  DATA.top_pengeluaran.forEach((t, i) => {
-    const userHtml = t.diinput_oleh
-      ? '<span class="tag-user">' + escHtml(t.diinput_oleh) + '</span>'
-      : '<em style="color:#ccc">-</em>';
-    const catHtml = t.kategori_nama && t.kategori_nama !== '-'
-      ? '<span class="tag-cat">' + escHtml(t.kategori_nama) + '</span>'
-      : '<em style="color:#ccc">-</em>';
-    const catatan = t.catatan ? escHtml(t.catatan.substring(0, 20)) + (t.catatan.length > 20 ? '…' : '') : '-';
-    tbody.innerHTML +=
-      '<tr>' +
-        '<td class="td-rank ' + rankClass(i) + '">' + (i + 1) + '</td>' +
-        '<td>' + tgl(t.tanggal) + '</td>' +
-        '<td>' + catHtml + '</td>' +
-        '<td class="td-jumlah-keluar">' + rpFull(t.jumlah) + '</td>' +
-        '<td style="color:#666;font-size:0.8rem">' + catatan + '</td>' +
-        '<td>' + userHtml + '</td>' +
-      '</tr>';
+  tbody.innerHTML = '';
+  D.top_pengeluaran.forEach((t, i) => {
+    const ikonK    = t.diinput_oleh === 'Istri' ? '&#128105;' : '&#128104;';
+    const userHtml = t.diinput_oleh ? '<span class="tag-user">' + ikonK + ' ' + escHtml(t.diinput_oleh) + '</span>' : '<em style="color:#ccc">-</em>';
+    const catHtml  = t.kategori_nama && t.kategori_nama !== '-' ? '<span class="tag-cat">' + escHtml(t.kategori_nama) + '</span>' : '<em style="color:#ccc">-</em>';
+    const cFull    = t.catatan || '';
+    let catatan;
+    if (!cFull) {
+      catatan = '<em style="color:#ccc">-</em>';
+    } else if (cFull.length > 15) {
+      const singkat = escHtml(cFull.substring(0, 15));
+      const full    = escHtml(cFull);
+      catatan = '<span class="catatan-singkat" data-full="' + full.replace(/"/g, '&quot;') + '">' + singkat + '...</span>';
+    } else {
+      catatan = escHtml(cFull);
+    }
+    tbody.innerHTML += '<tr><td class="td-rank ' + rankClass(i) + '">' + (i+1) + '</td><td>' + tgl(t.tanggal) + '</td><td>' + catHtml + '</td><td class="td-jumlah-keluar">' + rpFull(t.jumlah) + '</td><td style="color:#666;font-size:0.8rem">' + catatan + '</td><td>' + userHtml + '</td></tr>';
   });
-})();
+}
 
-/* ============================================================
-   TABEL: Top 5 Pemasukan Terbesar
-============================================================ */
-(function () {
+function renderTableMasuk(D) {
   const tbody = document.querySelector('#tbl-top-masuk tbody');
-  if (!DATA.top_pemasukan.length) {
+  if (!D.top_pemasukan.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="no-data">Belum ada pemasukan</td></tr>';
     return;
   }
-  DATA.top_pemasukan.forEach((t, i) => {
-    const userHtml = t.diinput_oleh
-      ? '<span class="tag-user">' + escHtml(t.diinput_oleh) + '</span>'
-      : '<em style="color:#ccc">-</em>';
-    const catatan = t.catatan ? escHtml(t.catatan.substring(0, 25)) + (t.catatan.length > 25 ? '…' : '') : '-';
-    tbody.innerHTML +=
-      '<tr>' +
-        '<td class="td-rank ' + rankClass(i) + '">' + (i + 1) + '</td>' +
-        '<td>' + tgl(t.tanggal) + '</td>' +
-        '<td class="td-jumlah-masuk">' + rpFull(t.jumlah) + '</td>' +
-        '<td style="color:#666;font-size:0.8rem">' + catatan + '</td>' +
-        '<td>' + userHtml + '</td>' +
-      '</tr>';
+  tbody.innerHTML = '';
+  D.top_pemasukan.forEach((t, i) => {
+    const ikonM    = t.diinput_oleh === 'Istri' ? '&#128105;' : '&#128104;';
+    const userHtml = t.diinput_oleh ? '<span class="tag-user">' + ikonM + ' ' + escHtml(t.diinput_oleh) + '</span>' : '<em style="color:#ccc">-</em>';
+    const mFull    = t.catatan || '';
+    let catatan;
+    if (!mFull) {
+      catatan = '<em style="color:#ccc">-</em>';
+    } else if (mFull.length > 15) {
+      const singkat = escHtml(mFull.substring(0, 15));
+      const full    = escHtml(mFull);
+      catatan = '<span class="catatan-singkat" data-full="' + full.replace(/"/g, '&quot;') + '">' + singkat + '...</span>';
+    } else {
+      catatan = escHtml(mFull);
+    }
+    tbody.innerHTML += '<tr><td class="td-rank ' + rankClass(i) + '">' + (i+1) + '</td><td>' + tgl(t.tanggal) + '</td><td class="td-jumlah-masuk">' + rpFull(t.jumlah) + '</td><td style="color:#666;font-size:0.8rem">' + catatan + '</td><td>' + userHtml + '</td></tr>';
   });
-})();
+}
+
+/* ============================================================
+   RENDER ALL
+============================================================ */
+function renderAll(D) {
+  _destroyCharts();
+
+  const rangeLabel = D.is_semua ? 'Semua Data' : tgl(D.filter_dari) + ' \u2013 ' + tgl(D.filter_sampai);
+  document.getElementById('header-sub').textContent = rangeLabel;
+  document.getElementById('filter-badge-text').textContent = rangeLabel;
+  $('.chart-range').text(rangeLabel);
+
+  renderKPI(D);
+  renderChartDonut(D);
+  renderChartKategoriDonut(D);
+  renderChartKategoriBar(D);
+  renderChartTren(D);
+  renderChartSaldo(D);
+  renderChartUser(D);
+  renderTableKeluar(D);
+  renderTableMasuk(D);
+}
+
+/* ============================================================
+   INIT: data awal dari PHP, render setelah DOM siap
+============================================================ */
+const DATA = <?= json_encode($js_data, JSON_UNESCAPED_UNICODE) ?>;
+
+$(function () {
+  // Simpan HTML canvas asli untuk di-restore saat filter berubah
+  ['wrap-donut','wrap-kategori-donut','wrap-kategori-bar','wrap-tren','wrap-saldo','wrap-user'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) _canvasHtml[id] = el.innerHTML;
+  });
+
+  renderAll(DATA);
+});
+
+/* ============================================================
+   FILTER: preset pills + input tanggal → jQuery AJAX (tanpa refresh)
+============================================================ */
+$(function () {
+  const $dari   = $('#f-dari');
+  const $sampai = $('#f-sampai');
+  const $fSemua = $('#f-semua');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+
+  const presets = {
+    'hari-ini':   function() { const t = new Date(); return [fmt(t), fmt(t)]; },
+    'minggu-ini': function() { const t = new Date(); const day = t.getDay() || 7; const mon = new Date(t); mon.setDate(t.getDate() - day + 1); return [fmt(mon), fmt(t)]; },
+    'bulan-ini':  function() { const t = new Date(); return [fmt(new Date(t.getFullYear(), t.getMonth(), 1)), fmt(t)]; },
+    'bulan-lalu': function() { const t = new Date(); return [fmt(new Date(t.getFullYear(), t.getMonth()-1, 1)), fmt(new Date(t.getFullYear(), t.getMonth(), 0))]; },
+    'semua':      function() { return [null, null]; }
+  };
+
+  // Tandai preset aktif saat halaman pertama kali dimuat
+  const curDari   = $dari.val();
+  const curSampai = $sampai.val();
+  const isSemua   = $fSemua.val() === '1';
+
+  $('.preset-pill').each(function () {
+    const key = $(this).data('preset');
+    if (key === 'semua' && isSemua) { $(this).addClass('pill-active'); return; }
+    if (!isSemua && presets[key]) {
+      const res = presets[key]();
+      if (res[0] && res[1] && res[0] === curDari && res[1] === curSampai) $(this).addClass('pill-active');
+    }
+  });
+
+  // Kirim AJAX ke analisa_data.php
+  function doAjax(params) {
+    $('#filter-loading').show();
+    $.get('analisa_data.php', params)
+      .done(function (data) { renderAll(data); })
+      .fail(function ()      { alert('Gagal memuat data. Coba lagi.'); })
+      .always(function ()    { $('#filter-loading').hide(); });
+  }
+
+  // Klik preset pill
+  $('.preset-pill').on('click', function () {
+    $('.preset-pill').removeClass('pill-active');
+    $(this).addClass('pill-active');
+    const key = $(this).data('preset');
+    if (key === 'semua') {
+      $fSemua.val('1');
+      $dari.val('2000-01-01');
+      $sampai.val(new Date().toISOString().split('T')[0]);
+      doAjax({ semua: '1' });
+    } else {
+      $fSemua.val('0');
+      const res = presets[key]();
+      $dari.val(res[0]);
+      $sampai.val(res[1]);
+      doAjax({ dari: res[0], sampai: res[1], semua: '0' });
+    }
+  });
+
+  // Ubah input tanggal manual
+  $dari.add($sampai).on('change', function () {
+    $fSemua.val('0');
+    $('.preset-pill').removeClass('pill-active');
+    doAjax({ dari: $dari.val(), sampai: $sampai.val(), semua: '0' });
+  });
+
+  // Tooltip catatan (klik, sama persis dengan index.php)
+  var $tooltip = $('#tooltip-catatan');
+
+  $(document).on('click', '.catatan-singkat', function (e) {
+    $tooltip.html($(this).data('full')).show();
+    var x = e.clientX, y = e.clientY + 12;
+    var lebar = $tooltip.outerWidth() || 260;
+    if (x + lebar > $(window).width() - 10) x = $(window).width() - lebar - 10;
+    $tooltip.css({ left: x, top: y });
+    e.stopPropagation();
+  });
+
+  $(document).on('click', function () { $tooltip.hide(); });
+});
 </script>
 
 </body>
