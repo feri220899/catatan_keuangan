@@ -545,25 +545,6 @@ $js_data = [
     .preset-pill:hover        { border-color: #3498db; color: #3498db; background: #eaf4fb; }
     .preset-pill.pill-active  { background: #3498db; color: #fff; border-color: #3498db; }
 
-    .filter-actions { display: flex; gap: 8px; }
-
-    .btn-filter {
-      flex: 1;
-      padding: 10px;
-      font-size: 0.85rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .btn-filter-apply  { background: #3498db; color: #fff; }
-    .btn-filter-apply:hover  { background: #2980b9; }
-
-    .btn-filter-reset  { background: #f0f4f8; color: #666; }
-    .btn-filter-reset:hover  { background: #e0e7ef; }
-
     .filter-badge {
       display: inline-block;
       margin-left: 6px;
@@ -659,10 +640,6 @@ $js_data = [
       </div>
       <input type="hidden" name="semua" id="f-semua" value="<?= $is_semua ? '1' : '0' ?>">
 
-      <div class="filter-actions">
-        <button type="submit" class="btn-filter btn-filter-apply">&#128269; Terapkan Filter</button>
-        <button type="button" class="btn-filter btn-filter-reset" id="btn-reset-filter">&#8635; Reset</button>
-      </div>
     </form>
   </div>
 
@@ -867,17 +844,8 @@ $js_data = [
         dari.value   = d;
         sampai.value = s;
       }
+      document.getElementById('form-filter').submit();
     });
-  });
-
-  // Reset ke default (bulan ini)
-  document.getElementById('btn-reset-filter').addEventListener('click', function() {
-    const t = new Date();
-    const awal = new Date(t.getFullYear(), t.getMonth(), 1);
-    dari.value   = fmt(awal);
-    sampai.value = fmt(t);
-    fSemua.value = '0';
-    document.getElementById('form-filter').submit();
   });
 
   // Auto-submit saat input tanggal berubah langsung
@@ -885,6 +853,7 @@ $js_data = [
     el.addEventListener('change', function() {
       fSemua.value = '0';
       document.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('pill-active'));
+      document.getElementById('form-filter').submit();
     });
   });
 })();
