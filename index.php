@@ -561,6 +561,10 @@ if (!isLoggedIn()) {
       <span class="tab-icon">&#127991;</span>
       <span class="tab-label">Kategori</span>
     </button>
+    <a href="analisa.php" class="tab-btn" role="tab" aria-selected="false" style="text-decoration:none">
+      <span class="tab-icon">&#128202;</span>
+      <span class="tab-label">Analisa</span>
+    </a>
   </nav>
 
   <!-- ===================================================
