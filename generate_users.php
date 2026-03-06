@@ -2,8 +2,8 @@
 /**
  * generate_users.php
  * ─────────────────────────────────────────
- * Jalankan file ini SEKALI via browser untuk membuat user.json
- * dengan 2 akun yang sudah ter-hash (bcrypt).
+ * Jalankan file ini SEKALI via browser untuk membuat akun user
+ * di tabel MySQL.
  *
  * Setelah berhasil → HAPUS file ini!
  * ─────────────────────────────────────────
@@ -25,20 +25,23 @@ $accounts = [
 ];
 // ────────────────────────────────────────────────────────────────
 
-$USER_FILE = __DIR__ . '/user.json';
+require_once __DIR__ . '/koneksi.php';
 
-$users = [];
+$results = [];
+
 foreach ($accounts as $acc) {
-    $users[] = [
-        'username'      => $acc['username'],
-        'nama'          => $acc['nama'],
-        // bcrypt cost 10 — cukup aman, tidak terlalu lambat
-        'password_hash' => password_hash($acc['password'], PASSWORD_BCRYPT, ['cost' => 10]),
-    ];
-}
+    $hash = password_hash($acc['password'], PASSWORD_BCRYPT, ['cost' => 10]);
 
-$json = json_encode(['users' => $users], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-$ok   = file_put_contents($USER_FILE, $json);
+    $stmt = $conn->prepare(
+        "INSERT INTO users (username, nama, password_hash) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE nama = VALUES(nama), password_hash = VALUES(password_hash)"
+    );
+    $stmt->bind_param('sss', $acc['username'], $acc['nama'], $hash);
+    $ok = $stmt->execute();
+    $stmt->close();
+
+    $results[] = ['acc' => $acc, 'ok' => $ok];
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -63,30 +66,24 @@ $ok   = file_put_contents($USER_FILE, $json);
 <div class="box">
   <h2>&#128274; Generate Users</h2>
 
-  <?php if ($ok !== false): ?>
-    <p class="ok">&#10003; <strong>user.json berhasil dibuat!</strong></p>
+  <table>
+    <tr><th>Username</th><th>Nama</th><th>Status</th></tr>
+    <?php foreach ($results as $r): ?>
+      <tr>
+        <td><?= htmlspecialchars($r['acc']['username']) ?></td>
+        <td><?= htmlspecialchars($r['acc']['nama']) ?></td>
+        <td class="<?= $r['ok'] ? 'ok' : 'err' ?>">
+          <?= $r['ok'] ? '&#10003; Berhasil' : '&#10007; Gagal' ?>
+        </td>
+      </tr>
+    <?php endforeach; ?>
+  </table>
 
-    <table>
-      <tr><th>Username</th><th>Password</th><th>Nama</th></tr>
-      <?php foreach ($accounts as $acc): ?>
-        <tr>
-          <td><?= htmlspecialchars($acc['username']) ?></td>
-          <td><?= htmlspecialchars($acc['password']) ?></td>
-          <td><?= htmlspecialchars($acc['nama']) ?></td>
-        </tr>
-      <?php endforeach; ?>
-    </table>
-
-    <div class="note">
-      &#9888; Password di atas hanya tampil di sini.<br>
-      Di <code>user.json</code> sudah tersimpan dalam bentuk <strong>hash bcrypt</strong> (tidak bisa dibaca balik).<br><br>
-      <strong>Hapus file <code>generate_users.php</code> sekarang!</strong><br>
-      Lalu buka &rarr; <a href="login.php">login.php</a>
-    </div>
-
-  <?php else: ?>
-    <p class="err">&#10007; Gagal menulis user.json. Periksa izin tulis pada folder.</p>
-  <?php endif; ?>
+  <div class="note">
+    &#9888; Password disimpan dalam bentuk <strong>hash bcrypt</strong> di database.<br><br>
+    <strong>Hapus file <code>generate_users.php</code> sekarang!</strong><br>
+    Lalu buka &rarr; <a href="login.php">login.php</a>
+  </div>
 </div>
 </body>
 </html>

@@ -15,6 +15,10 @@ Options -Indexes
     Require all denied
 </Files>
 
+<Files "koneksi.php">
+    Require all denied
+</Files>
+
 # Blokir akses ke folder .git
 <DirectoryMatch "\.git">
     Require all denied

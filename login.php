@@ -7,8 +7,7 @@ if (isLoggedIn()) {
     exit;
 }
 
-$USER_FILE = __DIR__ . '/user.json';
-$error     = '';
+$error = '';
 
 // ── Proses form POST ──────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -17,27 +16,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($username === '' || $password === '') {
         $error = 'Username dan password wajib diisi.';
-    } elseif (!file_exists($USER_FILE)) {
-        $error = 'Data user belum ada. Jalankan generate_users.php terlebih dahulu.';
     } else {
-        $data  = json_decode(file_get_contents($USER_FILE), true);
-        $users = $data['users'] ?? [];
-        $cocok = false;
+        require_once __DIR__ . '/koneksi.php';
 
-        foreach ($users as $user) {
-            if ($user['username'] === $username && password_verify($password, $user['password_hash'])) {
-                // Login berhasil
-                session_regenerate_id(true);
-                $_SESSION['logged_in'] = true;
-                $_SESSION['username']  = $user['username'];
-                $_SESSION['nama']      = $user['nama'] ?? $user['username'];
-                $cocok = true;
-                header('Location: index.php');
-                exit;
-            }
-        }
+        $stmt = $conn->prepare("SELECT username, nama, password_hash FROM users WHERE username = ?");
+        $stmt->bind_param('s', $username);
+        $stmt->execute();
+        $stmt->bind_result($db_username, $db_nama, $db_hash);
+        $found = $stmt->fetch();
+        $stmt->close();
 
-        if (!$cocok) {
+        if ($found && password_verify($password, $db_hash)) {
+            session_regenerate_id(true);
+            $_SESSION['logged_in'] = true;
+            $_SESSION['username']  = $db_username;
+            $_SESSION['nama']      = $db_nama ?: $db_username;
+            header('Location: index.php');
+            exit;
+        } else {
             $error = 'Username atau password salah.';
         }
     }
