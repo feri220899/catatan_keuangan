@@ -52,19 +52,22 @@ if (!isLoggedIn()) {
 
     .btn-logout {
       position: absolute;
-      top: 0; right: 0;
-      padding: 6px 12px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      background: #f8d7da;
-      color: #721c24;
-      border: none;
-      border-radius: 8px;
+      top: 10px; right: 12px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: rgba(231,76,60,0.55);
+      color: #fff;
+      border: 1px solid rgba(231,76,60,0.3);
+      border-radius: 20px;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.2s;
+      transition: background 0.2s, color 0.2s;
     }
-    .btn-logout:hover { background: #f5c6cb; }
+    .btn-logout:hover {
+      background: rgba(231,76,60,0.8);
+      color: #fff;
+    }
 
     /* ===== SALDO CARD ===== */
     .saldo-card {
@@ -75,6 +78,7 @@ if (!isLoggedIn()) {
       text-align: center;
       margin-bottom: 16px;
       box-shadow: 0 4px 16px rgba(44,62,80,0.25);
+      position: relative;
     }
 
     .saldo-label {
@@ -536,16 +540,10 @@ if (!isLoggedIn()) {
 
 <div class="container">
 
-  <!-- ===== HEADER ===== -->
-  <div class="app-header">
-    <h1>&#128181; Catatan Keuangan</h1>
-    <p id="info-user"></p>
-    <a href="logout.php" class="btn-logout">&#128274; Keluar</a>
-  </div>
-
   <!-- ===== SALDO — selalu tampil di semua tab ===== -->
   <div class="saldo-card">
-    <div class="saldo-label">Saldo Saat Ini</div>
+    <a href="logout.php" class="btn-logout" title="Keluar">&#128682;</a>
+    <div class="saldo-label">Sisa Uang Kita</div>
     <div class="saldo-amount" id="saldo">Memuat...</div>
   </div>
 
@@ -988,7 +986,7 @@ $(function () {
         catatan = $('<span>').text(catatanTeks).html();
       }
 
-      var namaUser = mapDiinputOleh[t.id] || '';
+      var namaUser = t.diinput_oleh || '';
       var ikonUser = (namaUser === 'Istri') ? '&#128105;' : '&#128104;';
       var diinputOleh = namaUser
         ? '<span class="tag-user">' + ikonUser + ' ' + $('<span>').text(namaUser).html() + '</span>'

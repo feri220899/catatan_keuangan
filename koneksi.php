@@ -6,10 +6,10 @@
  * Variabel $conn tersedia setelah include.
  */
 
-$db_host = "sql310.infinityfree.com";
-$db_user = "if0_41304100";
-$db_pass = "Se7xC9pLKiu";
-$db_name = "if0_41304100_keuangan";
+$db_host = "127.0.0.1";
+$db_user = "root";
+$db_pass = "root";
+$db_name = "keuangan";
 
 $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
 
