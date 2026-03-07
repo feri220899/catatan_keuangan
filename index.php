@@ -751,7 +751,7 @@ $(function () {
 
   // Filter riwayat: baca dari localStorage, fallback ke hari ini
   $('#filter-dari').val(localStorage.getItem('filterDari') || hariIni);
-  $('#filter-sampai').val(localStorage.getItem('filterSampai') || hariIni);
+  $('#filter-sampai').val(hariIni);
 
   /* ================================================
      NAVIGASI TAB
@@ -929,7 +929,6 @@ $(function () {
   // Filter langsung saat tanggal berubah (tanpa tombol), simpan ke localStorage
   $('#filter-dari, #filter-sampai').on('change', function () {
     localStorage.setItem('filterDari',   $('#filter-dari').val());
-    localStorage.setItem('filterSampai', $('#filter-sampai').val());
     terapkanFilter();
   });
 
